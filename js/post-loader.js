@@ -78,12 +78,18 @@ function parseAndRender(content) {
     tagsHtml = metadata.tags.map(tag => `<span class="post-card-tag">${tag}</span>`).join('');
   }
 
+  let imageHtml = '';
+  if (metadata.image) {
+    imageHtml = `<img src="${metadata.image}" alt="Cover Image" class="post-cover-image" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-top: 2rem; box-shadow: var(--glass-shadow);">`;
+  }
+
   postHeader.innerHTML = `
     <h1 class="post-title">${title}</h1>
     <div class="post-meta">
       <span class="post-meta-date">${date}</span>
       <div class="post-meta-tags">${tagsHtml}</div>
     </div>
+    ${imageHtml}
   `;
 
   document.title = `${title} - Erica's Blog`;

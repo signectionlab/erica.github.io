@@ -84,6 +84,7 @@ const posts = files.map((filename) => {
     date: metadata.date || new Date().toISOString().split('T')[0],
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
     category: metadata.category || '',
+    image: metadata.image || null,
     description: metadata.description || '',
     excerpt: excerpt + (excerpt.length === 200 ? '...' : ''),
   };

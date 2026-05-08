@@ -251,11 +251,27 @@ body {
   display: block;
   text-decoration: none;
   color: inherit;
-  padding: 1.5rem;
+  padding: 0;
+  overflow: hidden;
   transition: transform 0.3s ease, background-color 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.post-card-image {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.post-card-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .post-card:hover {

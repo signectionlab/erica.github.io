@@ -96,12 +96,17 @@ function renderPosts() {
       tagsHtml = post.tags.map(tag => `<span class="post-card-tag">${tag}</span>`).join('');
     }
 
+    let imageHtml = post.image ? `<div class="post-card-image" style="background-image: url('${post.image}')"></div>` : '';
+
     html += `
       <a href="post.html?file=${encodeURIComponent(post.file)}" class="post-card glass">
-        <div class="post-card-date">${date}</div>
-        <h2 class="post-card-title">${post.title}</h2>
-        <p class="post-card-excerpt">${post.excerpt}</p>
-        <div class="post-card-tags">${tagsHtml}</div>
+        ${imageHtml}
+        <div class="post-card-content">
+          <div class="post-card-date">${date}</div>
+          <h2 class="post-card-title">${post.title}</h2>
+          <p class="post-card-excerpt">${post.excerpt}</p>
+          <div class="post-card-tags">${tagsHtml}</div>
+        </div>
       </a>
     `;
   });

@@ -112,9 +112,9 @@ function loadGiscus() {
 
   // Replace with actual info later
   script.setAttribute('data-repo', 'signectionlab/signectionlab.github.io'); // 올바른 저장소 이름으로 수정했습니다.
-  script.setAttribute('data-repo-id', 'R_kgDOSXYm8Q'); // 값으로 변경
+  script.setAttribute('data-repo-id', 'R_kgDOSXYm8Q');
   script.setAttribute('data-category', 'General'); // 선택한 카테고리 이름
-  script.setAttribute('data-category-id', 'R_kgDOSXYm8Q'); // 값으로 변경
+  script.setAttribute('data-category-id', 'DIC_kwDOSXYm8c4C8jgv');
 
   script.setAttribute('data-mapping', 'pathname');
   script.setAttribute('data-strict', '0');

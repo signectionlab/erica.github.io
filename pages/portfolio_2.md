@@ -3,7 +3,7 @@ title: '인스타그램 인플루언서 광고 효율 데이터 분석'
 date: 2026-05-08
 tags: ['Portfolio', 'Data Analysis', 'Python']
 category: 'Portfolio'
-image: 'assets/images/influencer_data_analysis.png'
+image: 'assets/images/portfolio_2_thumbnail.png'
 description: '데이터 분석 첫번째 프로젝트: 인스타그램 인플루언서 광고 효율 시각화 및 분석'
 ---
 

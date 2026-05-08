@@ -23,7 +23,7 @@
       "Python"
     ],
     "category": "Portfolio",
-    "image": "assets/images/influencer_data_analysis.png",
+    "image": "assets/images/portfolio_2_thumbnail.png",
     "description": "데이터 분석 첫번째 프로젝트: 인스타그램 인플루언서 광고 효율 시각화 및 분석",
     "excerpt": "인스타그램 인플루언서에 대한 광고 효율 데이터 분석을 통해 최적의 마케팅 전략 도출. - : Python - : Pandas - : Google Colab - (https://github.com/signectionlab/signectionlab.github.io.git) --- 수집된 인플루언서 데이터들을 Pandas를 통해 정리하고 정제하여, 비용 대비"
   },

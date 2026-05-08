@@ -14,9 +14,9 @@ async function loadPost() {
   try {
     const response = await fetch(`pages/${file}`);
     if (!response.ok) throw new Error('Post not found');
-    
+
     let content = await response.text();
-    
+
     // Remove BOM if exists
     if (content.charCodeAt(0) === 0xFEFF) {
       content = content.slice(1);
@@ -34,7 +34,7 @@ async function loadPost() {
 
 function parseAndRender(content) {
   const frontMatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-  
+
   let metadata = {};
   let markdown = content;
 
@@ -72,7 +72,7 @@ function parseAndRender(content) {
   const date = new Date(dateStr).toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric'
   });
-  
+
   let tagsHtml = '';
   if (metadata.tags && Array.isArray(metadata.tags)) {
     tagsHtml = metadata.tags.map(tag => `<span class="post-card-tag">${tag}</span>`).join('');
@@ -85,7 +85,7 @@ function parseAndRender(content) {
       <div class="post-meta-tags">${tagsHtml}</div>
     </div>
   `;
-  
+
   document.title = `${title} - Erica's Blog`;
 
   // Parse Markdown
@@ -101,7 +101,7 @@ function parseAndRender(content) {
 
 function loadGiscus() {
   if (!commentsContainer) return;
-  
+
   // Clear existing script if any
   const existingScript = document.getElementById('giscus-script');
   if (existingScript) existingScript.remove();
@@ -109,22 +109,22 @@ function loadGiscus() {
   const script = document.createElement('script');
   script.id = 'giscus-script';
   script.src = 'https://giscus.app/client.js';
-  
+
   // Replace with actual info later
-  script.setAttribute('data-repo', 'YOUR_GITHUB_USERNAME/YOUR_GITHUB_USERNAME.github.io');
-  script.setAttribute('data-repo-id', 'YOUR_REPO_ID');
-  script.setAttribute('data-category', 'General');
-  script.setAttribute('data-category-id', 'YOUR_CATEGORY_ID');
-  
+  script.setAttribute('data-repo', 'signectionlab/signectionlab.github.io'); // 올바른 저장소 이름으로 수정했습니다.
+  script.setAttribute('data-repo-id', 'R_kgDOSXYm8Q'); // 값으로 변경
+  script.setAttribute('data-category', 'General'); // 선택한 카테고리 이름
+  script.setAttribute('data-category-id', 'R_kgDOSXYm8Q'); // 값으로 변경
+
   script.setAttribute('data-mapping', 'pathname');
   script.setAttribute('data-strict', '0');
   script.setAttribute('data-reactions-enabled', '1');
   script.setAttribute('data-emit-metadata', '1');
   script.setAttribute('data-input-position', 'bottom');
-  
+
   const isDark = document.body.classList.contains('theme-dark');
   script.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  
+
   script.setAttribute('data-lang', 'ko');
   script.setAttribute('crossorigin', 'anonymous');
   script.async = true;
@@ -136,7 +136,7 @@ function loadGiscus() {
 window.addEventListener('theme-changed', (e) => {
   const iframe = document.querySelector('iframe.giscus-frame');
   if (!iframe) return;
-  
+
   const theme = e.detail === 'dark' ? 'dark' : 'light';
   iframe.contentWindow.postMessage(
     { giscus: { setConfig: { theme } } },

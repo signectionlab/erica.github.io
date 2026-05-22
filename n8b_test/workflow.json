@@ -1,0 +1,338 @@
+{
+  "name": "portfolio-ai-agent-with-logging",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-node",
+      "name": "1. Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        300
+      ],
+      "webhookId": "portfolio-ai-agent",
+      "notes": "챗봇 위젯이 호출하는 입구"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst body = data.body || data;\n\nconst action = body.action || 'sendMessage';\nconst userMessage = (body.chatInput || body.message || '').trim();\nconst sessionId = body.sessionId || 'default';\n\nreturn [{\n  json: {\n    action: action,\n    user_message: userMessage,\n    session_id: sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-node",
+      "name": "2. 입력 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {
+          "systemMessage": "당신은 [홍길동]의 포트폴리오 AI 어시스턴트입니다.\n\n방문자(주로 면접관/채용담당자)의 질문에 친절하고 자신감 있게 답변하세요.\n\n## 본인 정보\n\n### 기본 정보\n- 이름: 홍길동\n- 직함: 데이터 분석가 (전환 중)\n- 배경: 마케터 5년 경력, 소비재 브랜드에서 캠페인 성과 분석 담당\n- 교육: 중랑여성인력개발센터 AX 융합 데이터 분석·시각화 전문인력 양성 과정 수료 (2026)\n- 연락처: haquoh@email.com\n- GitHub: https://github.com/haquoh\n- 포트폴리오: https://haquhyup.github.io\n\n### 기술 스택\n- 데이터 분석: Python, pandas, NumPy, SQL\n- 시각화: Tableau, Power BI, matplotlib\n- AI 자동화: n8n, Gemini API, ChatGPT\n- 협업/배포: GitHub, Google Sheets, Notion\n\n### 주요 프로젝트\n\n**프로젝트 1: Research Note Builder**\n- 회사명 입력하면 AI가 경쟁사 분석 보고서를 자동 생성하는 시스템\n- 기술: n8n + Gemini API + GitHub Pages\n- 성과: 분석 시간 4분으로 단축\n\n**프로젝트 2: 인스타그램 인플루언서 광고 효율 분석**\n- 인스타그램 인플루언서 데이터로 팔로워 수 대비 광고 효율 분석\n- 기술: Python, pandas, Google Colab, Tableau\n- 인사이트: 마이크로 인플루언서가 메가 인플루언서보다 참여율 3배 높음\n\n**프로젝트 3: 포트폴리오 AI 챗봇**\n- n8n과 Gemini AI로 만든 포트폴리오 소개 챗봇\n- 기술: n8n + Gemini API + GitHub Pages\n\n## 답변 규칙\n1. 위 정보에 있는 내용만 답변\n2. 모르는 질문: '자세한 내용은 haquoh@email.com으로 문의해 주세요'\n3. 답변 톤: 친절, 자신감, 전문적\n4. 답변 길이: 3-4문장\n5. 한국어로 답변\n\n## 질문 카테고리 자동 분류\n답변 시 마음속으로 질문이 아래 어느 카테고리인지 판단하세요:\n- 프로젝트: 프로젝트 내용, 기술 사용\n- 경력: 마케터 경력, 도메인 경험\n- 기술: 기술 스택, 도구\n- 강점: 차별점, 경쟁력\n- 지원동기: 왜 데이터분석가, 왜 우리회사\n- 연락처: 이메일, GitHub, 포트폴리오\n- 기타: 위 카테고리에 안 맞는 것\n\n## 첫 인사 처리\n사용자가 'init'이나 빈 메시지를 보내면:\n'안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요. 예시:\n• 어떤 프로젝트를 하셨나요?\n• 마케터 경력이 있으신가요?\n• 기술 스택이 어떻게 되나요?'"
+        }
+      },
+      "id": "agent-node",
+      "name": "3. AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "gemini-node",
+      "name": "Gemini 모델",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        540
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "17UCG75H2JCK15w5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('2. 입력 정리').first().json.session_id }}",
+        "contextWindowLength": 10
+      },
+      "id": "memory-node",
+      "name": "대화 기록",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -180,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI 답변 받은 후 카테고리 자동 분류\nconst agentOutput = $input.first().json;\nconst userMessage = $('2. 입력 정리').first().json.user_message;\nconst sessionId = $('2. 입력 정리').first().json.session_id;\nconst timestamp = $('2. 입력 정리').first().json.timestamp;\n\n// 카테고리 자동 분류 (키워드 기반)\nlet category = '기타';\nconst msg = userMessage.toLowerCase();\n\nif (msg.match(/프로젝트|만든|개발|구현|결과물/)) {\n  category = '프로젝트';\n} else if (msg.match(/경력|마케터|이전|과거|직장/)) {\n  category = '경력';\n} else if (msg.match(/기술|스택|도구|언어|파이썬|sql|tableau/)) {\n  category = '기술';\n} else if (msg.match(/강점|차별|왜|장점|특별/)) {\n  category = '강점';\n} else if (msg.match(/지원|동기|왜.*분석|관심/)) {\n  category = '지원동기';\n} else if (msg.match(/연락|이메일|github|블로그|링크/)) {\n  category = '연락처';\n} else if (msg.match(/안녕|하이|반가|시작/)) {\n  category = '인사';\n}\n\n// 첫 인사는 로깅 제외 (의미없는 로그 방지)\nif (userMessage === '' || userMessage === 'init') {\n  return [{ json: { skip_logging: true, output: agentOutput.output } }];\n}\n\nreturn [{\n  json: {\n    timestamp: timestamp,\n    session_id: sessionId,\n    question: userMessage,\n    answer: agentOutput.output,\n    category: category,\n    output: agentOutput.output\n  }\n}];"
+      },
+      "id": "log-prep",
+      "name": "4. 로그 준비 + 카테고리 분류",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        300
+      ],
+      "notes": "AI 답변 후 키워드 기반으로 자동 카테고리 분류 + 첫 인사는 로깅 제외"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-skip",
+              "leftValue": "={{ $json.skip_logging }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEqual"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-log",
+      "name": "5. 로깅할 것인가?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "chatbot_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "session_id": "={{ $json.session_id }}",
+            "category": "={{ $json.category }}",
+            "question": "={{ $json.question }}",
+            "answer": "={{ $json.answer }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "type": "string"
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "type": "string"
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "type": "string"
+            },
+            {
+              "id": "answer",
+              "displayName": "answer",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "sheets-log",
+      "name": "6. Sheets에 로그 저장",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        520,
+        220
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nVX6rWZbsPKhkdtn",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "notes": "방문자 질문과 답변을 Sheets에 누적 저장"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ output: $json.output }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-node",
+      "name": "7. 답변 반환",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "1. Webhook": {
+      "main": [
+        [
+          {
+            "node": "2. 입력 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. 입력 정리": {
+      "main": [
+        [
+          {
+            "node": "3. AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. AI Agent": {
+      "main": [
+        [
+          {
+            "node": "4. 로그 준비 + 카테고리 분류",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. 로그 준비 + 카테고리 분류": {
+      "main": [
+        [
+          {
+            "node": "5. 로깅할 것인가?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. 로깅할 것인가?": {
+      "main": [
+        [
+          {
+            "node": "6. Sheets에 로그 저장",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "7. 답변 반환",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Sheets에 로그 저장": {
+      "main": [
+        [
+          {
+            "node": "7. 답변 반환",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 모델": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "3. AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "대화 기록": {
+      "ai_memory": [
+        [
+          {
+            "node": "3. AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

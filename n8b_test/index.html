@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>홍길동 포트폴리오 AI 챗봇</title>
+  <style>
+    :root {
+      --primary-color: #4F46E5;
+      --secondary-color: #818CF8;
+      --bg-color: #F3F4F6;
+      --chat-bg: #FFFFFF;
+      --text-main: #1F2937;
+      --text-light: #6B7280;
+    }
+
+    body {
+      font-family: 'Pretendard', 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 400px;
+      height: 600px;
+      background-color: var(--chat-bg);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 15px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .message.bot {
+      background-color: #F3F4F6;
+      color: var(--text-main);
+      align-self: flex-start;
+      border-bottom-left-radius: 5px;
+    }
+
+    .message.user {
+      background-color: var(--primary-color);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 5px;
+    }
+
+    .chat-input-area {
+      padding: 15px;
+      background-color: white;
+      border-top: 1px solid #E5E7EB;
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid #E5E7EB;
+      border-radius: 25px;
+      outline: none;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .chat-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .send-btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .send-btn:hover {
+      background-color: #4338CA;
+      transform: scale(1.05);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background-color: #F3F4F6;
+      padding: 12px 16px;
+      border-radius: 15px;
+      border-bottom-left-radius: 5px;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--text-light);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .dot:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="chat-container">
+    <div class="chat-header">
+      홍길동 AI 어시스턴트 🤖
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <!-- Messages will appear here -->
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="userInput" class="chat-input" placeholder="질문을 입력해주세요..."
+        onkeypress="handleKeyPress(event)">
+      <button class="send-btn" onclick="sendMessage()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // UUID 생성 함수 (세션 ID용)
+    function generateSessionId() {
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
+    // 세션 ID 확인 및 생성
+    let sessionId = localStorage.getItem('chatbot_session_id');
+    if (!sessionId) {
+      sessionId = generateSessionId();
+      localStorage.setItem('chatbot_session_id', sessionId);
+    }
+
+    // n8n Webhook URL (N8N 설정 후 아래 URL을 변경하세요)
+    const WEBHOOK_URL = 'YOUR_N8N_WEBHOOK_URL_HERE'; // 예: https://your-n8n-domain.com/webhook/chat
+
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    function addMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message', sender);
+
+      // 줄바꿈 처리
+      msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+
+      chatMessages.insertBefore(msgDiv, typingIndicator);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTyping() {
+      typingIndicator.style.display = 'block';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTyping() {
+      typingIndicator.style.display = 'none';
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      // 1. 사용자 메시지 화면에 표시
+      addMessage(text, 'user');
+      userInput.value = '';
+
+      // 2. 타이핑 인디케이터 표시
+      showTyping();
+
+      try {
+        // 3. n8n 웹훅으로 데이터 전송
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'sendMessage',
+            message: text,
+            sessionId: sessionId
+          })
+        });
+
+        const data = await response.json();
+
+        // 4. 타이핑 인디케이터 숨기기 및 봇 답변 표시
+        hideTyping();
+        if (data && data.output) {
+          addMessage(data.output, 'bot');
+        } else {
+          addMessage('응답 형식이 올바르지 않습니다.', 'bot');
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        hideTyping();
+        addMessage('서버와 통신하는 중 오류가 발생했습니다.', 'bot');
+      }
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    // 초기 인사말 요청
+    window.onload = async function () {
+      showTyping();
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sendMessage', message: 'init', sessionId: sessionId })
+        });
+        const data = await response.json();
+        hideTyping();
+        if (data && data.output) {
+          addMessage(data.output, 'bot');
+        }
+      } catch (error) {
+        hideTyping();
+        addMessage('안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요.\n(참고: n8n Webhook URL이 설정되지 않았습니다.)', 'bot');
+      }
+    };
+  </script>
+</body>
+
+</html>

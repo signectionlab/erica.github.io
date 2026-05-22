@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>홍길동 포트폴리오 AI 챗봇</title>
+  <title>홍길동 포트폴리오 AI 챗봇 위젯</title>
   <style>
     :root {
       --primary-color: #4F46E5;
@@ -20,22 +20,59 @@
       background-color: var(--bg-color);
       margin: 0;
       padding: 0;
+    }
+
+    /* 화면 우측 하단에 뜨는 챗봇 둥근 아이콘 버튼 */
+    .chat-widget-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+      z-index: 9999;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
+    .chat-widget-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+    }
+
+    /* 챗봇 창 컨테이너 (기본적으로 숨겨짐) */
     .chat-container {
-      width: 100%;
-      max-width: 400px;
-      height: 600px;
+      position: fixed;
+      bottom: 100px;
+      right: 30px;
+      width: 350px;
+      height: 550px;
       background-color: var(--chat-bg);
       border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      z-index: 9998;
+      
+      /* 초기 상태는 숨김(투명도 0, 클릭 방지) */
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* open 클래스가 붙으면 나타남 */
+    .chat-container.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
     }
 
     .chat-header {
@@ -46,6 +83,19 @@
       font-weight: bold;
       font-size: 1.2rem;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    /* 닫기 버튼 (X 아이콘) */
+    .close-btn {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
     }
 
     .chat-messages {
@@ -121,10 +171,6 @@
       transform: scale(1.05);
     }
 
-    .send-btn:active {
-      transform: scale(0.95);
-    }
-
     .typing-indicator {
       display: none;
       align-self: flex-start;
@@ -144,34 +190,30 @@
       animation: bounce 1.4s infinite ease-in-out both;
     }
 
-    .dot:nth-child(1) {
-      animation-delay: -0.32s;
-    }
-
-    .dot:nth-child(2) {
-      animation-delay: -0.16s;
-    }
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
 
     @keyframes bounce {
-
-      0%,
-      80%,
-      100% {
-        transform: scale(0);
-      }
-
-      40% {
-        transform: scale(1);
-      }
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="chat-container">
+  <!-- 화면 우측 하단 둥근 챗봇 버튼 -->
+  <div class="chat-widget-button" id="chatWidgetButton" onclick="toggleChat()">
+    <svg id="widgetIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </div>
+
+  <!-- 챗봇 대화창 (숨겨짐) -->
+  <div class="chat-container" id="chatContainer">
     <div class="chat-header">
       홍길동 AI 어시스턴트 🤖
+      <button class="close-btn" onclick="toggleChat()">✕</button>
     </div>
     <div class="chat-messages" id="chatMessages">
       <!-- Messages will appear here -->
@@ -208,11 +250,37 @@
     }
 
     // n8n Webhook URL (N8N 설정 후 아래 URL을 변경하세요)
-    const WEBHOOK_URL = 'https://signectionlab.app.n8n.cloud/webhook/chat'; // 예: https://your-n8n-domain.com/webhook/chat
+    const WEBHOOK_URL = 'https://signectionlab.app.n8n.cloud/webhook/chat'; 
 
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
     const typingIndicator = document.getElementById('typingIndicator');
+    const chatContainer = document.getElementById('chatContainer');
+    const widgetIcon = document.getElementById('widgetIcon');
+
+    let isChatOpen = false;
+    let isInitialized = false; // 첫 인사를 한 번만 보내기 위함
+
+    // 챗봇 창 열기/닫기 토글
+    function toggleChat() {
+      isChatOpen = !isChatOpen;
+      
+      if (isChatOpen) {
+        chatContainer.classList.add('open');
+        // 아이콘을 X 로 변경
+        widgetIcon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+        
+        // 창이 처음 열릴 때 초기 인사말 요청
+        if (!isInitialized) {
+          sendInitMessage();
+          isInitialized = true;
+        }
+      } else {
+        chatContainer.classList.remove('open');
+        // 아이콘을 말풍선으로 복구
+        widgetIcon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
+      }
+    }
 
     function addMessage(text, sender) {
       const msgDiv = document.createElement('div');
@@ -238,20 +306,16 @@
       const text = userInput.value.trim();
       if (!text) return;
 
-      // 1. 사용자 메시지 화면에 표시
+      // 사용자 메시지 화면에 표시
       addMessage(text, 'user');
       userInput.value = '';
-
-      // 2. 타이핑 인디케이터 표시
+      
       showTyping();
 
       try {
-        // 3. n8n 웹훅으로 데이터 전송
         const response = await fetch(WEBHOOK_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'sendMessage',
             message: text,
@@ -260,9 +324,8 @@
         });
 
         const data = await response.json();
-
-        // 4. 타이핑 인디케이터 숨기기 및 봇 답변 표시
         hideTyping();
+        
         if (data && data.output) {
           addMessage(data.output, 'bot');
         } else {
@@ -282,8 +345,8 @@
       }
     }
 
-    // 초기 인사말 요청
-    window.onload = async function () {
+    // 초기 인사말 요청 함수
+    async function sendInitMessage() {
       showTyping();
       try {
         const response = await fetch(WEBHOOK_URL, {
@@ -298,9 +361,9 @@
         }
       } catch (error) {
         hideTyping();
-        addMessage('안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요.\n(참고: n8n Webhook URL이 설정되지 않았습니다.)', 'bot');
+        addMessage('안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요.\n(참고: n8n Webhook 연동 오류)', 'bot');
       }
-    };
+    }
   </script>
 </body>
 

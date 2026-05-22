@@ -78,6 +78,140 @@
   <script src="js/theme.js"></script>
   <script src="js/search.js"></script>
   <script src="js/app.js"></script>
-</body>
+  <!-- CHATBOT WIDGET START -->
+  <style>
+    .chat-widget-wrapper {
+      --chat-primary: #4F46E5;
+      --chat-secondary: #818CF8;
+      --chat-bg: #FFFFFF;
+      --chat-text-main: #1F2937;
+      --chat-text-light: #6B7280;
+      font-family: 'Pretendard', 'Inter', sans-serif;
+    }
+    .chat-widget-button {
+      position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary)); color: white;
+      display: flex; justify-content: center; align-items: center; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); z-index: 9999; transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .chat-widget-button:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6); }
+    .chat-container {
+      position: fixed; bottom: 100px; right: 30px; width: 350px; height: 550px; background-color: var(--chat-bg);
+      border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column;
+      overflow: hidden; z-index: 9998; opacity: 0; pointer-events: none; transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .chat-container.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .chat-header {
+      background: linear-gradient(135deg, var(--chat-primary), var(--chat-secondary)); color: white; padding: 20px;
+      text-align: center; font-weight: bold; font-size: 1.2rem; position: relative;
+    }
+    .close-btn { position: absolute; top: 18px; right: 20px; background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .chat-message { max-width: 80%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
+    .chat-message.bot { background-color: #F3F4F6; color: var(--chat-text-main); align-self: flex-start; border-bottom-left-radius: 5px; }
+    .chat-message.user { background-color: var(--chat-primary); color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+    .chat-input-area { padding: 15px; background-color: white; border-top: 1px solid #E5E7EB; display: flex; gap: 10px; }
+    .chat-input { flex: 1; padding: 12px 15px; border: 1px solid #E5E7EB; border-radius: 25px; outline: none; font-size: 0.95rem; }
+    .chat-input:focus { border-color: var(--chat-primary); }
+    .chat-send-btn { background-color: var(--chat-primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+    .chat-typing-indicator { display: none; align-self: flex-start; background-color: #F3F4F6; padding: 12px 16px; border-radius: 15px; border-bottom-left-radius: 5px; }
+    .chat-dot { display: inline-block; width: 6px; height: 6px; background-color: var(--chat-text-light); border-radius: 50%; margin: 0 2px; animation: chat-bounce 1.4s infinite ease-in-out both; }
+    .chat-dot:nth-child(1) { animation-delay: -0.32s; } .chat-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes chat-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+  </style>
 
+  <div class="chat-widget-wrapper">
+    <div class="chat-widget-button" id="chatWidgetButton" onclick="toggleChat()">
+      <svg id="widgetIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </div>
+    <div class="chat-container" id="chatContainer">
+      <div class="chat-header">홍길동 AI 어시스턴트 🤖<button class="close-btn" onclick="toggleChat()">✕</button></div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-typing-indicator" id="typingIndicator">
+          <div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="userInput" class="chat-input" placeholder="질문을 입력해주세요..." onkeypress="handleKeyPress(event)">
+        <button class="chat-send-btn" onclick="sendMessage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function generateSessionId() { return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); }
+    let chatSessionId = localStorage.getItem('chatbot_session_id');
+    if (!chatSessionId) { chatSessionId = generateSessionId(); localStorage.setItem('chatbot_session_id', chatSessionId); }
+    
+    const CHAT_WEBHOOK_URL = 'https://signectionlab.app.n8n.cloud/webhook/chat'; 
+    let isChatOpen = false; let isChatInitialized = false;
+
+    function toggleChat() {
+      isChatOpen = !isChatOpen;
+      const container = document.getElementById('chatContainer');
+      const icon = document.getElementById('widgetIcon');
+      if (isChatOpen) {
+        container.classList.add('open');
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+        if (!isChatInitialized) { sendInitMessage(); isChatInitialized = true; }
+      } else {
+        container.classList.remove('open');
+        icon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
+      }
+    }
+
+    function addMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('chat-message', sender);
+      msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+      const msgs = document.getElementById('chatMessages');
+      msgs.insertBefore(msgDiv, document.getElementById('typingIndicator'));
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function showTyping() { document.getElementById('typingIndicator').style.display = 'block'; document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight; }
+    function hideTyping() { document.getElementById('typingIndicator').style.display = 'none'; }
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      input.value = '';
+      showTyping();
+      try {
+        const response = await fetch(CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'sendMessage', message: text, sessionId: chatSessionId }) });
+        const data = await response.json();
+        hideTyping();
+        if (data && data.output) addMessage(data.output, 'bot');
+        else addMessage('응답 형식이 올바르지 않습니다.', 'bot');
+      } catch (error) {
+        hideTyping(); addMessage('서버와 통신하는 중 오류가 발생했습니다.', 'bot');
+      }
+    }
+
+    function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
+
+    async function sendInitMessage() {
+      showTyping();
+      try {
+        const response = await fetch(CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'sendMessage', message: 'init', sessionId: chatSessionId }) });
+        const data = await response.json();
+        hideTyping();
+        if (data && data.output) addMessage(data.output, 'bot');
+      } catch (error) {
+        hideTyping();
+        addMessage('안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요.', 'bot');
+      }
+    }
+  </script>
+  <!-- CHATBOT WIDGET END -->
+</body>
 </html>

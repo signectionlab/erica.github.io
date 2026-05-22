@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>홍길동 포트폴리오 AI 챗봇</title>
+  <title>?�길???�트?�리??AI 챗봇</title>
   <style>
     :root {
       --primary-color: #4F46E5;
@@ -171,7 +171,7 @@
 
   <div class="chat-container">
     <div class="chat-header">
-      홍길동 AI 어시스턴트 🤖
+      ?�길??AI ?�시?�턴???��
     </div>
     <div class="chat-messages" id="chatMessages">
       <!-- Messages will appear here -->
@@ -182,7 +182,7 @@
       </div>
     </div>
     <div class="chat-input-area">
-      <input type="text" id="userInput" class="chat-input" placeholder="질문을 입력해주세요..."
+      <input type="text" id="userInput" class="chat-input" placeholder="질문???�력?�주?�요..."
         onkeypress="handleKeyPress(event)">
       <button class="send-btn" onclick="sendMessage()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -195,20 +195,20 @@
   </div>
 
   <script>
-    // UUID 생성 함수 (세션 ID용)
+    // UUID ?�성 ?�수 (?�션 ID??
     function generateSessionId() {
       return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
-    // 세션 ID 확인 및 생성
+    // ?�션 ID ?�인 �??�성
     let sessionId = localStorage.getItem('chatbot_session_id');
     if (!sessionId) {
       sessionId = generateSessionId();
       localStorage.setItem('chatbot_session_id', sessionId);
     }
 
-    // n8n Webhook URL (N8N 설정 후 아래 URL을 변경하세요)
-    const WEBHOOK_URL = 'https://signectionlab.app.n8n.cloud/webhook-test/chat'; // 예: https://your-n8n-domain.com/webhook/chat
+    // n8n Webhook URL (N8N ?�정 ???�래 URL??변경하?�요)
+    const WEBHOOK_URL = 'https://signectionlab.app.n8n.cloud/webhook-test/chat'; // ?? https://your-n8n-domain.com/webhook-test/chat
 
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
@@ -218,7 +218,7 @@
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('message', sender);
 
-      // 줄바꿈 처리
+      // 줄바�?처리
       msgDiv.innerHTML = text.replace(/\n/g, '<br>');
 
       chatMessages.insertBefore(msgDiv, typingIndicator);
@@ -238,15 +238,15 @@
       const text = userInput.value.trim();
       if (!text) return;
 
-      // 1. 사용자 메시지 화면에 표시
+      // 1. ?�용??메시지 ?�면???�시
       addMessage(text, 'user');
       userInput.value = '';
 
-      // 2. 타이핑 인디케이터 표시
+      // 2. ?�?�핑 ?�디케?�터 ?�시
       showTyping();
 
       try {
-        // 3. n8n 웹훅으로 데이터 전송
+        // 3. n8n ?�훅?�로 ?�이???�송
         const response = await fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: {
@@ -261,18 +261,18 @@
 
         const data = await response.json();
 
-        // 4. 타이핑 인디케이터 숨기기 및 봇 답변 표시
+        // 4. ?�?�핑 ?�디케?�터 ?�기�?�?�??��? ?�시
         hideTyping();
         if (data && data.output) {
           addMessage(data.output, 'bot');
         } else {
-          addMessage('응답 형식이 올바르지 않습니다.', 'bot');
+          addMessage('?�답 ?�식???�바르�? ?�습?�다.', 'bot');
         }
 
       } catch (error) {
         console.error('Error:', error);
         hideTyping();
-        addMessage('서버와 통신하는 중 오류가 발생했습니다.', 'bot');
+        addMessage('?�버?� ?�신?�는 �??�류가 발생?�습?�다.', 'bot');
       }
     }
 
@@ -282,7 +282,7 @@
       }
     }
 
-    // 초기 인사말 요청
+    // 초기 ?�사�??�청
     window.onload = async function () {
       showTyping();
       try {
@@ -298,7 +298,7 @@
         }
       } catch (error) {
         hideTyping();
-        addMessage('안녕하세요! 홍길동의 포트폴리오 AI 어시스턴트입니다 😊\n저에 대해 궁금하신 점을 물어보세요.\n(참고: n8n Webhook URL이 설정되지 않았습니다.)', 'bot');
+        addMessage('?�녕?�세?? ?�길?�의 ?�트?�리??AI ?�시?�턴?�입?�다 ?��\n?�???�??궁금?�신 ?�을 물어보세??\n(참고: n8n Webhook URL???�정?��? ?�았?�니??)', 'bot');
       }
     };
   </script>
